@@ -207,14 +207,13 @@
         <div class="logo"><a href="index.html">ArtFort</a></div>
         <nav>
             <a href="#">機能</a>
-            <a href="#">使用法</a>
+            <a href="#">使い方</a>
             <a href="#">FAQ</a>
         </nav>
-
     </header>
 
     <div class="contents">
-        <p class="instruction">守りたい画像を選択してください</p>
+        <p class="instruction">Select an Image to Protect.</p>
         <label for="fileInput" class="file-upload-label">
             <span class="material-symbols-outlined">
                 cloud_upload
@@ -225,208 +224,20 @@
             <img id="image" style="display: none; max-width: 100%;" alt="Preview Image">
         </div>
         <button id="cropButton" onclick="uploadAndEncrypt()" control-id="ControlID-4">実行</button>
-
         <div class="preview" style="display: none; flex-direction: column; align-items: center;">
-            <p><b>ツイッターサムネイルのプレビュー</b></p>
+            <p><b>サムネイル プレビュー</b></p>
             <img id="preview" alt="Cropped Image Preview">
         </div>
-
         <p id="generatedUrl"
             style="margin-top: 20px; font-size: 16px; width: 90%; text-align: center; word-break: break-all;"></p>
         <button id="copyButton" style="display: none; padding: 5px 10px; margin-top: 10px; cursor: pointer;"
-            control-id="ControlID-5">コピー</button><br><br>
+            control-id="ControlID-5">Copy URL</button><br><br>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
     <script>
-        const fileInput = document.getElementById('fileInput');
-        const image = document.getElementById('image');
-        const cropButton = document.getElementById('cropButton');
-        const preview = document.getElementById('preview');
-        const generatedUrl = document.getElementById('generatedUrl');
-        const uploadUrl = 'upload.php';
-        let cropper;
-        let originalFile;
-
-        fileInput.addEventListener('change', (event) => {
-            originalFile = event.target.files[0];
-            if (originalFile) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    image.src = e.target.result;
-                    image.style.display = 'block';
-                    if (cropper) cropper.destroy();
-                    cropper = new Cropper(image, {
-                        aspectRatio: 1.91 / 1,
-                    });
-                };
-                reader.readAsDataURL(originalFile);
-            }
-        });
-
-        async function loadWatermark(src) {
-            return new Promise((resolve, reject) => {
-                const watermark = new Image();
-                watermark.src = src;
-                watermark.onload = () => resolve(watermark);
-                watermark.onerror = (e) => reject(e);
-            });
-        }
-        const password = "G<pt%N{tNL5A[*)tprRrL$++?h>tA4F3={]h(?3J{&@%!})Ph?J!e{_=H<R[5<Tm!e=?H(5r$Y4enm[%3!MM=!H)$EMyLp=n&G*pf3<]75G&7$GeYFP{r-$!=M#?tT}f=e#Tnm=({@(_GY)nNt$#?}N]_[_{{G<#f*+R@&NE4Je4}f!Nmn!7JAP3Ln$5}77(p<[}#*Y%5eYH}%hEPrM(A<p=+&{$RFNG!)+<>_&Ah=_$ty$-5TRtM?hN$_N3Y*_e";
-        const salt = "eJ5>{A{H5n)57L!(3h+N%m)>>7[EGLh_)+7Y@!)Tf&MAy}(R@+3%M4=]=<*M#mMRmE7M@rN@+$EYTrP@#(r=Hpt{hh5}4PN_P?5]%ReL=t@@f=hJMGpn!$y(N7$]nF-f[7%%MG_(m}$%((yY4JL{=mhYNnn$-<3MM!{AE-#%y=G(p5L])Gf)$Y%@y>M7$+&ATY!-]=AF%N?hM44<!LFMnR5YHF[F]N($RR{J+J@_@yT+?#@T(@ef]tMY5<Nn@E=G";
-
-        async function uploadAndEncrypt() {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-            if (!file) {
-                alert('ファイルを選択してください。');
-                return;
-            }
-
-            const base64 = await toBase64(file);
-
-            const encryptedData = await aesEncrypt(base64, password, salt);
-            
-            //パス変更必要
-            await fetch('https://shiraki22.com/artfort/api/upload', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    fileName: file.name,
-                    data: encryptedData
-                })
-            });
-        }
-
-
-        function toBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result.split(',')[1]);
-                reader.onerror = error => reject(error);
-                reader.readAsDataURL(file);
-            });
-        }
-
-        async function aesEncrypt(data, password, salt) {
-            const enc = new TextEncoder();
-
-            const keyMaterial = await crypto.subtle.importKey(
-                'raw',
-                enc.encode(password),
-                'PBKDF2',
-                false,
-                ['deriveKey']
-            );
-
-            const key = await crypto.subtle.deriveKey(
-                {
-                    name: 'PBKDF2',
-                    salt: enc.encode(salt),
-                    iterations: 100000,
-                    hash: 'SHA-256'
-                },
-                keyMaterial,
-                { name: 'AES-CBC', length: 256 },
-                false,
-                ['encrypt']
-            );
-
-            const iv = crypto.getRandomValues(new Uint8Array(16));
-
-            const encrypted = await crypto.subtle.encrypt(
-                { name: 'AES-CBC', iv },
-                key,
-                enc.encode(data)
-            );
-
-            return {
-                iv: arrayBufferToBase64(iv),
-                encrypted: arrayBufferToBase64(encrypted)
-            };
-        }
-
-        function arrayBufferToBase64(buffer) {
-            let binary = '';
-            const bytes = new Uint8Array(buffer);
-            for (const byte of bytes) {
-                binary += String.fromCharCode(byte);
-            }
-            return btoa(binary);
-        }
-        cropButton.addEventListener('click', async () => {
-            if (cropper && originalFile) {
-                try {
-                    const watermark = await loadWatermark('watermark.png');
-                    const croppedCanvas = cropper.getCroppedCanvas();
-                    const ctx = croppedCanvas.getContext('2d');
-                    const wmWidth = croppedCanvas.width * 0.3;
-                    const wmHeight = (wmWidth / watermark.width) * watermark.height;
-                    ctx.drawImage(watermark, croppedCanvas.width - wmWidth - 10, croppedCanvas.height - wmHeight - 10, wmWidth, wmHeight);
-
-                    const previewContainer = document.querySelector('.preview');
-                    previewContainer.style.display = 'flex';
-                    preview.src = croppedCanvas.toDataURL('image/jpeg');
-
-                    const formData = new FormData();
-                    const timestamp = new Date().toISOString().replace(/[-:.]/g, '').slice(0, 12);
-
-                    const fileNameWithoutExtension = originalFile.name.split('.').slice(0, -1).join('.');
-                    const uniqueFileName = `${fileNameWithoutExtension}_${timestamp}`;
-
-                    formData.append('originalFile', originalFile, uniqueFileName);
-
-
-
-                    croppedCanvas.toBlob((blob) => {
-                        const formData = new FormData();
-                        formData.append('file', blob, 'cropped-image.jpg');
-                        formData.append('originalFile', originalFile, uniqueFileName);
-                        console.log(uniqueFileName);
-
-                        fetch(uploadUrl, {
-                            method: 'POST',
-                            body: formData,
-                        })
-                            .then(response => {
-                                if (!response.ok) throw new Error(`アップロードエラー: ${response.statusText}`);
-                                return response.json();
-                            })
-                            .then(data => {
-                                console.log('サーバーからの応答:', data);
-                                alert('プロテクト処理が完了しました！');
-                                generatedUrl.innerHTML = `ツイート用URL:<br><a href="${data.url}" target="_blank">${data.url}</a>`;
-                                document.getElementById('copyButton').style.display = 'inline-block';
-
-                                document.getElementById('copyButton').addEventListener('click', () => {
-                                    navigator.clipboard.writeText(data.url).then(() => {
-                                        alert("URLがコピーされました！");
-                                    }).catch(err => {
-                                        console.error('クリップボードへのコピーに失敗しました:', err);
-                                        alert("クリップボードへのコピーに失敗しました");
-                                    });
-                                });
-                            })
-                            .catch(error => {
-                                console.error('アップロードに失敗しました:', error);
-                                alert('アップロードに失敗しました．管理者までお問い合わせください．');
-                            });
-
-                        cropper.destroy();
-                        fileInput.style.display = 'none';
-                        cropButton.style.display = 'none';
-                        image.style.display = 'none';
-                    }, 'image/jpeg');
-                } catch (error) {
-                    console.error('ウォーターマーク読み込みエラー:', error);
-                    alert('不正なリクエストです');
-                }
-            } else {
-            }
-        });
+        const _0x50f450=_0x154d;(function(_0x49da16,_0x2853a3){const _0x4cf186=_0x154d,_0x2df7e4=_0x49da16();while(!![]){try{const _0x2747a1=-parseInt(_0x4cf186(0xca))/0x1*(parseInt(_0x4cf186(0xa1))/0x2)+-parseInt(_0x4cf186(0xcf))/0x3+-parseInt(_0x4cf186(0xa3))/0x4+-parseInt(_0x4cf186(0xeb))/0x5+-parseInt(_0x4cf186(0xad))/0x6*(parseInt(_0x4cf186(0xe6))/0x7)+parseInt(_0x4cf186(0xdd))/0x8*(parseInt(_0x4cf186(0xe2))/0x9)+-parseInt(_0x4cf186(0xd2))/0xa*(-parseInt(_0x4cf186(0xea))/0xb);if(_0x2747a1===_0x2853a3)break;else _0x2df7e4['push'](_0x2df7e4['shift']());}catch(_0xcd49ce){_0x2df7e4['push'](_0x2df7e4['shift']());}}}(_0xf455,0xcc0b6));const _0x1b5913=(function(){let _0x1f5cbd=!![];return function(_0x5677fa,_0x39747e){const _0x58bd13=_0x1f5cbd?function(){const _0x4c5a1d=_0x154d;if(_0x39747e){const _0x23d248=_0x39747e[_0x4c5a1d(0xf1)](_0x5677fa,arguments);return _0x39747e=null,_0x23d248;}}:function(){};return _0x1f5cbd=![],_0x58bd13;};}());(function(){_0x1b5913(this,function(){const _0x35598e=_0x154d,_0x4801bb=new RegExp('function\x20*\x5c(\x20*\x5c)'),_0x41662e=new RegExp(_0x35598e(0xba),'i'),_0x5e388a=_0xe80552('init');!_0x4801bb['test'](_0x5e388a+_0x35598e(0xd0))||!_0x41662e['test'](_0x5e388a+'input')?_0x5e388a('0'):_0xe80552();})();}());const fileInput=document[_0x50f450(0xb4)](_0x50f450(0xb5)),image=document[_0x50f450(0xb4)](_0x50f450(0xdc)),cropButton=document[_0x50f450(0xb4)](_0x50f450(0xb9)),preview=document[_0x50f450(0xb4)](_0x50f450(0xcb)),generatedUrl=document['getElementById'](_0x50f450(0xbf)),uploadUrl='upload.php';(function(){const _0xf6fcb=_0x50f450;let _0x266935;try{const _0x3e3f83=Function(_0xf6fcb(0xe9)+_0xf6fcb(0xb3)+');');_0x266935=_0x3e3f83();}catch(_0x2bd549){_0x266935=window;}_0x266935[_0xf6fcb(0x95)](_0xe80552,0xfa0);}());let cropper,originalFile;fileInput[_0x50f450(0xae)](_0x50f450(0xa0),_0x430da6=>{const _0x24b765=_0x50f450;originalFile=_0x430da6[_0x24b765(0xb2)]['files'][0x0];if(originalFile){const _0x17f36d=new FileReader();_0x17f36d['onload']=_0x19b5ac=>{const _0x312bc4=_0x24b765;image['src']=_0x19b5ac['target']['result'],image[_0x312bc4(0xe4)][_0x312bc4(0x9f)]='block';if(cropper)cropper['destroy']();cropper=new Cropper(image,{'aspectRatio':1.91/0x1});},_0x17f36d[_0x24b765(0xc0)](originalFile);}});async function loadWatermark(_0x4ed7c4){return new Promise((_0x73f8d,_0x4e370e)=>{const _0x1d2fbf=_0x154d,_0x3454ea=new Image();_0x3454ea[_0x1d2fbf(0xd9)]=_0x4ed7c4,_0x3454ea[_0x1d2fbf(0xbb)]=()=>_0x73f8d(_0x3454ea),_0x3454ea['onerror']=_0xefd21=>_0x4e370e(_0xefd21);});}const password=_0x50f450(0xb7),salt=_0x50f450(0xf2);async function uploadAndEncrypt(){const _0x5e856f=_0x50f450,_0x5d8742=document['getElementById'](_0x5e856f(0xb5)),_0x10a48d=_0x5d8742['files'][0x0];if(!_0x10a48d){alert(_0x5e856f(0xa4));return;}const _0x56ce8f=await toBase64(_0x10a48d),_0x4acbbf=await aesEncrypt(_0x56ce8f,password,salt);await fetch(_0x5e856f(0xa6),{'method':'POST','headers':{'Content-Type':_0x5e856f(0xcc)},'body':JSON['stringify']({'fileName':_0x10a48d['name'],'data':_0x4acbbf})});}function toBase64(_0xd0fc54){return new Promise((_0xe055c1,_0x538a10)=>{const _0x12a534=_0x154d,_0x11c270=new FileReader();_0x11c270[_0x12a534(0xbb)]=()=>_0xe055c1(_0x11c270[_0x12a534(0xc7)]['split'](',')[0x1]),_0x11c270[_0x12a534(0xaf)]=_0x284fab=>_0x538a10(_0x284fab),_0x11c270[_0x12a534(0xc0)](_0xd0fc54);});}async function aesEncrypt(_0x1e7c77,_0x141ed8,_0x26837a){const _0x336837=_0x50f450,_0x456538=new TextEncoder(),_0x137396=await crypto[_0x336837(0xee)][_0x336837(0xbc)](_0x336837(0x9d),_0x456538['encode'](_0x141ed8),_0x336837(0xc1),![],['deriveKey']),_0x489052=await crypto[_0x336837(0xee)]['deriveKey']({'name':_0x336837(0xc1),'salt':_0x456538['encode'](_0x26837a),'iterations':0x186a0,'hash':_0x336837(0xc9)},_0x137396,{'name':_0x336837(0xd5),'length':0x100},![],['encrypt']),_0x21a486=crypto[_0x336837(0xf4)](new Uint8Array(0x10)),_0x3465da=await crypto['subtle'][_0x336837(0xbd)]({'name':_0x336837(0xd5),'iv':_0x21a486},_0x489052,_0x456538[_0x336837(0xc8)](_0x1e7c77));return{'iv':arrayBufferToBase64(_0x21a486),'encrypted':arrayBufferToBase64(_0x3465da)};}function _0x154d(_0x283797,_0x2ec513){const _0x276f61=_0xf455();return _0x154d=function(_0xe80552,_0x1b5913){_0xe80552=_0xe80552-0x95;let _0x25cbc9=_0x276f61[_0xe80552];return _0x25cbc9;},_0x154d(_0x283797,_0x2ec513);}function arrayBufferToBase64(_0x2f0ab3){const _0x34b784=_0x50f450;let _0x3bc81a='';const _0x2f64ed=new Uint8Array(_0x2f0ab3);for(const _0x1ebc5e of _0x2f64ed){_0x3bc81a+=String[_0x34b784(0xa5)](_0x1ebc5e);}return btoa(_0x3bc81a);}cropButton[_0x50f450(0xae)]('click',async()=>{const _0x5d0444=_0x50f450;if(cropper&&originalFile)try{const _0x38ae23=await loadWatermark(_0x5d0444(0xda)),_0x1bc494=cropper[_0x5d0444(0xc2)](),_0x332d35=_0x1bc494[_0x5d0444(0xc6)]('2d'),_0x4dee06=_0x1bc494[_0x5d0444(0xed)]*0.3,_0x269fe3=_0x4dee06/_0x38ae23[_0x5d0444(0xed)]*_0x38ae23[_0x5d0444(0x97)];_0x332d35[_0x5d0444(0xc5)](_0x38ae23,_0x1bc494[_0x5d0444(0xed)]-_0x4dee06-0xa,_0x1bc494['height']-_0x269fe3-0xa,_0x4dee06,_0x269fe3);const _0x4d7b45=document[_0x5d0444(0x9a)](_0x5d0444(0xe0));_0x4d7b45[_0x5d0444(0xe4)]['display']='flex',preview['src']=_0x1bc494['toDataURL'](_0x5d0444(0xec));const _0x4b0829=new FormData(),_0x434023=new Date()[_0x5d0444(0xdf)]()['replace'](/[-:.]/g,'')['slice'](0x0,0xc),_0x367af7=originalFile[_0x5d0444(0xe7)][_0x5d0444(0x98)]('.')[_0x5d0444(0xf6)](0x0,-0x1)[_0x5d0444(0xe3)]('.'),_0x2f7156=_0x367af7+'_'+_0x434023;_0x4b0829[_0x5d0444(0xc4)](_0x5d0444(0xa9),originalFile,_0x2f7156),_0x1bc494['toBlob'](_0x472899=>{const _0x2406f5=_0x5d0444,_0x2499e1=new FormData();_0x2499e1['append'](_0x2406f5(0xa2),_0x472899,'cropped-image.jpg'),_0x2499e1[_0x2406f5(0xc4)]('originalFile',originalFile,_0x2f7156),console[_0x2406f5(0x9c)](_0x2f7156),fetch(uploadUrl,{'method':_0x2406f5(0xb6),'body':_0x2499e1})[_0x2406f5(0xc3)](_0xfc54f2=>{const _0x2078eb=_0x2406f5;if(!_0xfc54f2['ok'])throw new Error(_0x2078eb(0xf3)+_0xfc54f2['statusText']);return _0xfc54f2[_0x2078eb(0xd3)]();})[_0x2406f5(0xc3)](_0x311b11=>{const _0x2fbe87=_0x2406f5;console[_0x2fbe87(0x9c)]('サーバーからの応答:',_0x311b11),alert(_0x2fbe87(0xd4)),generatedUrl[_0x2fbe87(0x9b)]=_0x2fbe87(0xe8)+_0x311b11[_0x2fbe87(0xa7)]+_0x2fbe87(0xa8)+_0x311b11[_0x2fbe87(0xa7)]+'</a>',document[_0x2fbe87(0xb4)](_0x2fbe87(0x9e))[_0x2fbe87(0xe4)][_0x2fbe87(0x9f)]=_0x2fbe87(0xb8),document[_0x2fbe87(0xb4)](_0x2fbe87(0x9e))[_0x2fbe87(0xae)](_0x2fbe87(0xef),()=>{const _0x41c029=_0x2fbe87;navigator[_0x41c029(0xf0)]['writeText'](_0x311b11['url'])[_0x41c029(0xc3)](()=>{const _0x62b656=_0x41c029;alert(_0x62b656(0xaa));})[_0x41c029(0xf5)](_0x583bd3=>{const _0x31fe33=_0x41c029;alert(_0x31fe33(0x96));});});})[_0x2406f5(0xf5)](_0xcd8716=>{const _0x178b96=_0x2406f5;console['error'](_0x178b96(0xcd),_0xcd8716),alert(_0x178b96(0xbe));}),cropper[_0x2406f5(0x99)](),fileInput[_0x2406f5(0xe4)][_0x2406f5(0x9f)]=_0x2406f5(0xab),cropButton[_0x2406f5(0xe4)]['display']=_0x2406f5(0xab),image[_0x2406f5(0xe4)][_0x2406f5(0x9f)]=_0x2406f5(0xab);},_0x5d0444(0xec));}catch(_0x2dc1d3){console[_0x5d0444(0xe5)](_0x5d0444(0xd6),_0x2dc1d3),alert(_0x5d0444(0xb0));}else{}});function _0xf455(){const _0x3c89c0=['json','プロテクト処理が完了しました！','AES-CBC','ウォーターマーク読み込みエラー:','debu','while\x20(true)\x20{}','src','watermark.png','length','image','4680FXZZGQ','constructor','toISOString','.preview','counter','1143WScoOo','join','style','error','7iaEDEl','name','Please\x20embed\x20this\x20URL\x20in\x20your\x20Post.<br><a\x20href=\x22','return\x20(function()\x20','50616269hDKgAd','7801155fMLYQS','image/jpeg','width','subtle','click','clipboard','apply','eJ5>{A{H5n)57L!(3h+N%m)>>7[EGLh_)+7Y@!)Tf&MAy}(R@+3%M4=]=<*M#mMRmE7M@rN@+$EYTrP@#(r=Hpt{hh5}4PN_P?5]%ReL=t@@f=hJMGpn!$y(N7$]nF-f[7%%MG_(m}$%((yY4JL{=mhYNnn$-<3MM!{AE-#%y=G(p5L])Gf)$Y%@y>M7$+&ATY!-]=AF%N?hM44<!LFMnR5YHF[F]N($RR{J+J@_@yT+?#@T(@ef]tMY5<Nn@E=G','アップロードエラー:\x20','getRandomValues','catch','slice','setInterval','クリップボードへのコピーに失敗しました','height','split','destroy','querySelector','innerHTML','log','raw','copyButton','display','change','26jJGNlO','file','161020qBvIDA','ファイルを選択してください。','fromCharCode','https://shiraki22.com/artfort/api/upload','url','\x22\x20target=\x22_blank\x22>','originalFile','URLがコピーされました','none','stateObject','5930676zYwQJR','addEventListener','onerror','不正なリクエストです','action','target','{}.constructor(\x22return\x20this\x22)(\x20)','getElementById','fileInput','POST','G<pt%N{tNL5A[*)tprRrL$++?h>tA4F3={]h(?3J{&@%!})Ph?J!e{_=H<R[5<Tm!e=?H(5r$Y4enm[%3!MM=!H)$EMyLp=n&G*pf3<]75G&7$GeYFP{r-$!=M#?tT}f=e#Tnm=({@(_GY)nNt$#?}N]_[_{{G<#f*+R@&NE4Je4}f!Nmn!7JAP3Ln$5}77(p<[}#*Y%5eYH}%hEPrM(A<p=+&{$RFNG!)+<>_&Ah=_$ty$-5TRtM?hN$_N3Y*_e','inline-block','cropButton','\x5c+\x5c+\x20*(?:[a-zA-Z_$][0-9a-zA-Z_$]*)','onload','importKey','encrypt','アップロードに失敗しました．管理者までお問い合わせください．','generatedUrl','readAsDataURL','PBKDF2','getCroppedCanvas','then','append','drawImage','getContext','result','encode','SHA-256','85667FZIPwl','preview','application/json','アップロードに失敗しました:','gger','412215ktnWld','chain','call','10MaIAOm'];_0xf455=function(){return _0x3c89c0;};return _0xf455();}function _0xe80552(_0x5de0e3){function _0x2fab53(_0x2b5bad){const _0x161bec=_0x154d;if(typeof _0x2b5bad==='string')return function(_0x9008d2){}[_0x161bec(0xde)](_0x161bec(0xd8))[_0x161bec(0xf1)](_0x161bec(0xe1));else(''+_0x2b5bad/_0x2b5bad)[_0x161bec(0xdb)]!==0x1||_0x2b5bad%0x14===0x0?function(){return!![];}[_0x161bec(0xde)]('debu'+_0x161bec(0xce))[_0x161bec(0xd1)](_0x161bec(0xb1)):function(){return![];}[_0x161bec(0xde)](_0x161bec(0xd7)+_0x161bec(0xce))[_0x161bec(0xf1)](_0x161bec(0xac));_0x2fab53(++_0x2b5bad);}try{if(_0x5de0e3)return _0x2fab53;else _0x2fab53(0x0);}catch(_0x119613){}}
     </script>
-
-
 </body>
 
 </html>

@@ -1,11 +1,11 @@
 <?php
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $uploadDirCropped = 'uploads/';
-    $uploadDirRaw = 'uploads-raw/';
+    //$uploadDirRaw = 'uploads-raw/';
     $outputDir = 'output/';
 
     if (!is_dir($uploadDirCropped)) mkdir($uploadDirCropped, 0755, true);
-    if (!is_dir($uploadDirRaw)) mkdir($uploadDirRaw, 0755, true);
+    //if (!is_dir($uploadDirRaw)) mkdir($uploadDirRaw, 0755, true);
     if (!is_dir($outputDir)) mkdir($outputDir, 0755, true);
 
     if (isset($_FILES['file'])) {
@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $uploadFilePathCropped = $uploadDirCropped . $fileNameCropped;
         if (!move_uploaded_file($_FILES['file']['tmp_name'], $uploadFilePathCropped)) {
             http_response_code(500);
-            echo json_encode(['error' => 'トリミング画像のアップロードに失敗しました。']);
+            echo json_encode(['error' => 'サムネイルのアップロードに失敗しました。']);
             exit;
         }
     }
