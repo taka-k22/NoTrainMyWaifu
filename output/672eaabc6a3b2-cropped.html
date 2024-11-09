@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="waifu3_0" />
+    <meta name="twitter:title" content="ArtFort" />
+    <meta name="twitter:description" content="description" />
+    <meta name="twitter:image" content="https://shiraki22.com/artfort/uploads/672eaabc6a3b2-cropped.jpg" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="../obfuscator.js"></script>
+    <title>ArtFort</title>
+
+    <style>
+        body,
+        html {
+            background-color: black;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #canvas {
+            height: 100vh;
+            width: auto;
+            filter: blur(10px);
+            /* ぼかしフィルターを適用 */
+            transition: filter 0.2s ease;
+            /* フィルターの変化をなめらかに */
+            display: block;
+            margin: auto;
+        }
+
+        /* スマホ対応 */
+        @media (max-width: 768px) {
+            #canvas {
+                width: 100%;
+                height: auto;
+                color: #dbdbdb;
+                filter: none;
+                /* モバイルではすりガラス効果を無効化 */
+
+            }
+        }
+
+        /* キャプチャー対策用高速ウォーターマーク */
+        .scroll-infinity {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            /* 前面に配置 */
+            pointer-events: none;
+            /* マウス操作を無効化 */
+        }
+
+        @keyframes infinity-scroll-left {
+            from {
+                transform: translateX(0);
+            }
+
+            to {
+                transform: translateX(-100%);
+            }
+        }
+
+        .scroll-infinity__wrap {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            margin: auto;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .scroll-infinity__list {
+            display: flex;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .scroll-infinity__list--left {
+            animation: infinity-scroll-left 3s infinite linear 0.3s both;
+        }
+
+        .scroll-infinity__item {
+            width: 50vw;
+            opacity: 0.03;
+        }
+
+        /* スマホ対応 */
+        @media (max-width: 768px) {
+            .scroll-infinity__item {
+                width: 100vw;
+            }
+        }
+
+        .scroll-infinity__item>img {
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body oncontextmenu="return false;">
+    <canvas id="canvas"></canvas>
+
+    <!--キャプチャー対策用高速ウォーターマーク-->
+    <div class="scroll-infinity">
+        <div class="scroll-infinity__wrap">
+            <ul class="scroll-infinity__list scroll-infinity__list--left">
+                <li class="scroll-infinity__item"><img src="../wm1.png" /><br><img
+                        src="../wm1.png" /></li>
+                <li class="scroll-infinity__item"><img src="../wm1.png" /><br><img
+                        src="../wm1.png" /></li>
+            </ul>
+            <ul class="scroll-infinity__list scroll-infinity__list--left">
+                <li class="scroll-infinity__item"><img src="../wm1.png" /><br><img
+                        src="../wm1.png" /></li>
+                <li class="scroll-infinity__item"><img src="../wm1.png" /><br><img
+                        src="../wm1.png" /></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Load Image data. / Insert a fixed watermark.
+        window.onload = async () => {
+            const canvas = document.getElementById('canvas');
+            const encrypted = await fetch('https://shiraki22.com/artfort/json_files/1_20241109T002.json').then(res => res.json());
+            const decrypted = await aesDecrypt(encrypted, password, salt);
+            const dataURL = "data:image/png;base64," + decrypted;
+            const ipAddress = await fetch('https://api.ipify.org?format=json')
+                .then(response => response.json())
+                .then(data => data.ip);
+
+            createImageBitmap(toBlob(dataURL)).then(bitmap => {
+                canvas.width = bitmap.width;
+                canvas.height = bitmap.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(bitmap, 0, 0);
+
+                // Get a timestamp when the image is loaded.
+                const now = new Date();
+                const formattedTime = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
+
+                // Get user's timezone.
+                const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+                // Add a watermark.
+                ctx.font = "10px Yu Gothic";
+                ctx.fillStyle = '#dbdbdb';
+                ctx.fillText(`Originally posted by (username) / Loaded at ${formattedTime} (${timeZone}), by  ${ipAddress}`, canvas.width - 700, canvas.height - 10);
+            });
+        };
+
+        // Canvasのリサイズ処理
+        function resizeCanvas() {
+            const canvas = document.getElementById('canvas');
+            if (window.innerWidth <= 768) {
+                canvas.style.width = '100%';
+                canvas.style.height = 'auto';
+            } else {
+                canvas.style.height = '100vh';
+                canvas.style.width = 'auto';
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // クリックおよびタップですりガラスを解除
+        const canvas = document.getElementById('canvas');
+        function removeBlur() {
+            if (window.innerWidth > 768) {
+                // PCサイズの場合のみぼかし解除
+                canvas.style.filter = "none";
+            }
+        }
+
+        function addBlur() {
+            if (window.innerWidth > 768) {
+                // PCサイズの場合のみぼかし復帰
+                canvas.style.filter = "blur(10px)";
+            }
+        }
+
+        // PC向けイベントのみ登録
+        if (window.innerWidth > 768) {
+            document.addEventListener("mousedown", removeBlur);
+            document.addEventListener("mouseup", addBlur);
+        }
+
+        // 画面サイズの変更時にイベントリスナーを更新
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                // PCサイズの場合のみ再登録
+                document.addEventListener("mousedown", removeBlur);
+                document.addEventListener("mouseup", addBlur);
+            } else {
+                // モバイルサイズの場合はイベントを削除
+                document.removeEventListener("mousedown", removeBlur);
+                document.removeEventListener("mouseup", addBlur);
+                canvas.style.filter = "none"; // モバイルでは常にぼかしなし
+            }
+        });
+    </script>
+</body>
+
+</html>

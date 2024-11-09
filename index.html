@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArtFort</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
+    <style>
+        /* 既存のスタイル */
+        body {
+            background-color: #f5f5f5;
+            margin: 0;
+        }
+
+        .contents:not(.button) {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
+            background-color: white;
+            color: #333;
+            margin: 30px;
+            padding: 0 20px;
+            min-height: 70vh;
+            border-radius: 10px;
+        }
+
+        .preview {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .preview img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        input[type="file"] {
+            display: block;
+            margin: 15px 0;
+            font-size: 16px;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        p.instruction {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        #cropButton {
+            display: block;
+            font-size: 16px;
+            padding: 10px 20px;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.3s;
+            background-color: #555;
+        }
+
+
+        #cropButton:hover {
+            background-color: #45a049;
+            background-position: 100% 0;
+        }
+
+        #preview {
+            display: block;
+            max-width: 90%;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        /*ヘッダー*/
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #333;
+            padding: 10px 20px;
+            color: #fff;
+        }
+
+        header a {
+            color: #fff;
+            margin: 0 15px;
+            text-decoration: none;
+        }
+
+        #generatedUrl a {
+            color: #0066ff;
+            text-decoration: none;
+        }
+
+        #generatedUrl a:visited {
+            color: #0066ff;
+            text-decoration: none;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        nav a {
+            color: #fff;
+            margin: 0 15px;
+            text-decoration: none;
+        }
+
+        nav a:hover {
+            color: #70aafb;
+            text-decoration: none;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+        }
+
+        .search-bar input[type="text"] {
+            padding: 5px;
+            font-size: 16px;
+        }
+
+        .search-bar button {
+            padding: 6px 10px;
+            background-color: #555;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+
+        /*ヘッダーここまで*/
+
+        /* 画面幅が768px以下の場合 */
+        @media (max-width: 600px) {
+            p.instruction {
+                font-size: 1.1em;
+            }
+        }
+
+
+        @media (min-width: 768px) {
+            .content {
+                width: 50%;
+            }
+
+            .preview {
+                width: 50%;
+            }
+        }
+
+        .button {
+            display: inline-block;
+        }
+
+        /*ファイル選択*/
+        .file-upload-label {
+            display: inline-block;
+        }
+
+        .file-upload-label span {
+            font-size: 3em;
+            /* アイコンサイズ */
+        }
+    </style>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=cloud_upload" />
+    <style id="MTM4MDAwMDAxOTk5OTkzMA=="></style>
+    <script type="text/javascript" charset="utf-8" defer="" async=""
+        src="chrome-extension://lnaahdmijnjnmgaalacdgakieangpjgp/inject-scripts/patch-xhr.js" data-params="{}"></script>
+    <script type="text/javascript" charset="utf-8" defer="" async=""
+        src="chrome-extension://lnaahdmijnjnmgaalacdgakieangpjgp/inject-scripts/set-global.js"
+        data-params="{&quot;name&quot;:&quot;__stopWatching&quot;,&quot;value&quot;:true}"></script>
+    <script type="text/javascript" charset="utf-8" defer="" async=""
+        src="chrome-extension://lnaahdmijnjnmgaalacdgakieangpjgp/inject-scripts/set-global.js"
+        data-params="{&quot;name&quot;:&quot;__jsons&quot;,&quot;value&quot;:[]}"></script>
+</head>
+
+<body>
+    <header>
+        <div class="logo"><a href="index.html">ArtFort</a></div>
+        <nav>
+            <a href="#">機能</a>
+            <a href="#">使用法</a>
+            <a href="#">FAQ</a>
+        </nav>
+
+    </header>
+
+    <div class="contents">
+        <p class="instruction">守りたい画像を選択してください</p>
+        <label for="fileInput" class="file-upload-label">
+            <span class="material-symbols-outlined">
+                cloud_upload
+            </span>
+        </label>
+        <input type="file" id="fileInput" control-id="ControlID-3" class="file-upload-input" style="display: none;">
+        <div class="content">
+            <img id="image" style="display: none; max-width: 100%;" alt="Preview Image">
+        </div>
+        <button id="cropButton" onclick="uploadAndEncrypt()" control-id="ControlID-4">実行</button>
+
+        <div class="preview" style="display: none; flex-direction: column; align-items: center;">
+            <p><b>ツイッターサムネイルのプレビュー</b></p>
+            <img id="preview" alt="Cropped Image Preview">
+        </div>
+
+        <p id="generatedUrl"
+            style="margin-top: 20px; font-size: 16px; width: 90%; text-align: center; word-break: break-all;"></p>
+        <button id="copyButton" style="display: none; padding: 5px 10px; margin-top: 10px; cursor: pointer;"
+            control-id="ControlID-5">コピー</button><br><br>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const image = document.getElementById('image');
+        const cropButton = document.getElementById('cropButton');
+        const preview = document.getElementById('preview');
+        const generatedUrl = document.getElementById('generatedUrl');
+        const uploadUrl = 'upload.php';
+        let cropper;
+        let originalFile;
+
+        fileInput.addEventListener('change', (event) => {
+            originalFile = event.target.files[0];
+            if (originalFile) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    image.src = e.target.result;
+                    image.style.display = 'block';
+                    if (cropper) cropper.destroy();
+                    cropper = new Cropper(image, {
+                        aspectRatio: 1.91 / 1,
+                    });
+                };
+                reader.readAsDataURL(originalFile);
+            }
+        });
+
+        async function loadWatermark(src) {
+            return new Promise((resolve, reject) => {
+                const watermark = new Image();
+                watermark.src = src;
+                watermark.onload = () => resolve(watermark);
+                watermark.onerror = (e) => reject(e);
+            });
+        }
+        const password = "G<pt%N{tNL5A[*)tprRrL$++?h>tA4F3={]h(?3J{&@%!})Ph?J!e{_=H<R[5<Tm!e=?H(5r$Y4enm[%3!MM=!H)$EMyLp=n&G*pf3<]75G&7$GeYFP{r-$!=M#?tT}f=e#Tnm=({@(_GY)nNt$#?}N]_[_{{G<#f*+R@&NE4Je4}f!Nmn!7JAP3Ln$5}77(p<[}#*Y%5eYH}%hEPrM(A<p=+&{$RFNG!)+<>_&Ah=_$ty$-5TRtM?hN$_N3Y*_e";
+        const salt = "eJ5>{A{H5n)57L!(3h+N%m)>>7[EGLh_)+7Y@!)Tf&MAy}(R@+3%M4=]=<*M#mMRmE7M@rN@+$EYTrP@#(r=Hpt{hh5}4PN_P?5]%ReL=t@@f=hJMGpn!$y(N7$]nF-f[7%%MG_(m}$%((yY4JL{=mhYNnn$-<3MM!{AE-#%y=G(p5L])Gf)$Y%@y>M7$+&ATY!-]=AF%N?hM44<!LFMnR5YHF[F]N($RR{J+J@_@yT+?#@T(@ef]tMY5<Nn@E=G";
+
+        async function uploadAndEncrypt() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('ファイルを選択してください。');
+                return;
+            }
+
+            const base64 = await toBase64(file);
+
+            const encryptedData = await aesEncrypt(base64, password, salt);
+            
+            //パス変更必要
+            await fetch('https://shiraki22.com/artfort/api/upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fileName: file.name,
+                    data: encryptedData
+                })
+            });
+        }
+
+
+        function toBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function aesEncrypt(data, password, salt) {
+            const enc = new TextEncoder();
+
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw',
+                enc.encode(password),
+                'PBKDF2',
+                false,
+                ['deriveKey']
+            );
+
+            const key = await crypto.subtle.deriveKey(
+                {
+                    name: 'PBKDF2',
+                    salt: enc.encode(salt),
+                    iterations: 100000,
+                    hash: 'SHA-256'
+                },
+                keyMaterial,
+                { name: 'AES-CBC', length: 256 },
+                false,
+                ['encrypt']
+            );
+
+            const iv = crypto.getRandomValues(new Uint8Array(16));
+
+            const encrypted = await crypto.subtle.encrypt(
+                { name: 'AES-CBC', iv },
+                key,
+                enc.encode(data)
+            );
+
+            return {
+                iv: arrayBufferToBase64(iv),
+                encrypted: arrayBufferToBase64(encrypted)
+            };
+        }
+
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            for (const byte of bytes) {
+                binary += String.fromCharCode(byte);
+            }
+            return btoa(binary);
+        }
+        cropButton.addEventListener('click', async () => {
+            if (cropper && originalFile) {
+                try {
+                    const watermark = await loadWatermark('watermark.png');
+                    const croppedCanvas = cropper.getCroppedCanvas();
+                    const ctx = croppedCanvas.getContext('2d');
+                    const wmWidth = croppedCanvas.width * 0.3;
+                    const wmHeight = (wmWidth / watermark.width) * watermark.height;
+                    ctx.drawImage(watermark, croppedCanvas.width - wmWidth - 10, croppedCanvas.height - wmHeight - 10, wmWidth, wmHeight);
+
+                    const previewContainer = document.querySelector('.preview');
+                    previewContainer.style.display = 'flex';
+                    preview.src = croppedCanvas.toDataURL('image/jpeg');
+
+                    const formData = new FormData();
+                    const timestamp = new Date().toISOString().replace(/[-:.]/g, '').slice(0, 12);
+
+                    const fileNameWithoutExtension = originalFile.name.split('.').slice(0, -1).join('.');
+                    const uniqueFileName = `${fileNameWithoutExtension}_${timestamp}`;
+
+                    formData.append('originalFile', originalFile, uniqueFileName);
+
+
+
+                    croppedCanvas.toBlob((blob) => {
+                        const formData = new FormData();
+                        formData.append('file', blob, 'cropped-image.jpg');
+                        formData.append('originalFile', originalFile, uniqueFileName);
+                        console.log(uniqueFileName);
+
+                        fetch(uploadUrl, {
+                            method: 'POST',
+                            body: formData,
+                        })
+                            .then(response => {
+                                if (!response.ok) throw new Error(`アップロードエラー: ${response.statusText}`);
+                                return response.json();
+                            })
+                            .then(data => {
+                                console.log('サーバーからの応答:', data);
+                                alert('プロテクト処理が完了しました！');
+                                generatedUrl.innerHTML = `ツイート用URL:<br><a href="${data.url}" target="_blank">${data.url}</a>`;
+                                document.getElementById('copyButton').style.display = 'inline-block';
+
+                                document.getElementById('copyButton').addEventListener('click', () => {
+                                    navigator.clipboard.writeText(data.url).then(() => {
+                                        alert("URLがコピーされました！");
+                                    }).catch(err => {
+                                        console.error('クリップボードへのコピーに失敗しました:', err);
+                                        alert("クリップボードへのコピーに失敗しました");
+                                    });
+                                });
+                            })
+                            .catch(error => {
+                                console.error('アップロードに失敗しました:', error);
+                                alert('アップロードに失敗しました．管理者までお問い合わせください．');
+                            });
+
+                        cropper.destroy();
+                        fileInput.style.display = 'none';
+                        cropButton.style.display = 'none';
+                        image.style.display = 'none';
+                    }, 'image/jpeg');
+                } catch (error) {
+                    console.error('ウォーターマーク読み込みエラー:', error);
+                    alert('不正なリクエストです');
+                }
+            } else {
+            }
+        });
+    </script>
+
+
+</body>
+
+</html>

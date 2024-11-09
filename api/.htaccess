@@ -1,0 +1,11 @@
+DirectoryIndex disabled
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# json_filesディレクトリ内のリクエストを除外
+RewriteCond %{REQUEST_URI} ^/json_files/ [NC]
+RewriteRule ^ - [L]
+
+# それ以外のすべてのリクエストを3000ポートにプロキシ
+RewriteRule (.*) http://localhost:3000/$1 [P,L,QSA]
+</IfModule>
