@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         //パス変更必要
-        $outputUrl = "https://shiraki22.com/artfort/$outputFilePath";
+        $outputUrl = "https://your-domain.com/artfort/$outputFilePath";
         echo json_encode(['message' => 'アップロードとHTML生成が完了しました。', 'url' => $outputUrl]);
     } else {
         http_response_code(500);
