@@ -1,9 +1,64 @@
-Install express at /api.
+# アプリケーション概要
 
-Run pm2 start server.js
+## はじめに
 
-Some paths are need to be modified when you install newly.
+本アプリケーションは、**サーバーのルートディレクトリ**での動作を前提として設計されています。サブディレクトリでの動作は保証されません。
 
-template.html L9, L139
+APIはデフォルトで **ポート3000** にて待ち受けるよう構成されています。  
+そのため、サーバーでポート3000を使用できない場合は、`.htaccess` による **リバースプロキシ設定**などで代替対応を行ってください。
 
-upload.php L51
+なお、**利用規約など一部リンク先ファイルが含まれていない箇所**があります。必要に応じて設置してください。
+
+---
+
+## 必要なプログラム
+
+- [Node.js](https://nodejs.org/)
+- [pm2](https://pm2.keymetrics.io/)（プロセス維持のために使用）
+
+---
+
+## インストール方法
+
+1. このリポジトリ内のファイルを**すべてサーバーのルートディレクトリ**に配置します。
+
+2. 以下のファイル内の `{your_domain}` を適宜置き換えてください。
+   - `template.html`：L10、L146
+   - `upload.php`：L51
+   - `index.html`：L353
+
+3. `api` ディレクトリに移動し、以下のコマンドを実行して Express をインストールします。
+
+    ```bash
+    npm install express
+    ```
+
+4. サーバーを pm2 で起動します。
+
+    ```bash
+    pm2 start server.js
+    ```
+
+5. Webブラウザで `http://{your_domain}/api` にアクセスし、「**Cannot GET /**」と表示されれば正常に稼働しています。  
+   そのままルートディレクトリにアクセスすればアプリケーションの使用が可能です。
+
+---
+
+## 備考
+
+`.htaccess` を用いたリバースプロキシ設定の一例：
+
+```apache
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # /json_files/ を除外
+  RewriteCond %{REQUEST_URI} ^/json_files/ [NC]
+  RewriteRule ^ - [L]
+
+  # その他は port 3000 へプロキシ
+  RewriteRule (.*) http://localhost:3000/$1 [P,L,QSA]
+</IfModule>
+```
+
+Apache の設定によっては、`mod_proxy` および `mod_proxy_http` モジュールが必要です。
